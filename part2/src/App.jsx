@@ -1,5 +1,39 @@
 import { useState } from 'react'
 
+// Komponent Filter
+const Filter = ({ filter, handleFilterChange }) => (
+  <div>
+    filter shown with: <input value={filter} onChange={handleFilterChange} />
+  </div>
+)
+
+// Komponent PersonForm
+const PersonForm = ({ addPerson, newName, handleNameChange, newNumber, handleNumberChange }) => (
+  <form onSubmit={addPerson}>
+    <div>
+      name: <input value={newName} onChange={handleNameChange} />
+    </div>
+    <div>
+      number: <input value={newNumber} onChange={handleNumberChange} />
+    </div>
+    <div>
+      <button type="submit">add</button>
+    </div>
+  </form>
+)
+
+// Komponent Persons
+const Persons = ({ persons }) => (
+  <ul>
+    {persons.map(person => 
+      <li key={person.name}>
+        {person.name} {person.number}
+      </li>
+    )}
+  </ul>
+)
+
+// Główny komponent App
 const App = () => {
   const [persons, setPersons] = useState([
     { name: 'Arto Hellas', number: '040-123456' },
@@ -11,32 +45,27 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   const [filter, setFilter] = useState('')
 
+  // Dodawanie osoby
   const addPerson = (event) => {
     event.preventDefault()
-
-    const exists = persons.some(
-      person => person.name === newName
-    )
-
+    const exists = persons.some(person => person.name === newName)
     if (exists) {
       alert(`${newName} is already added to phonebook`)
       return
     }
 
-    const personObject = {
-      name: newName,
-      number: newNumber
-    }
-
+    const personObject = { name: newName, number: newNumber }
     setPersons(persons.concat(personObject))
     setNewName('')
     setNewNumber('')
   }
 
-  const handleFilterChange = (event) => {
-    setFilter(event.target.value)
-  }
+  // Event handlery
+  const handleNameChange = (event) => setNewName(event.target.value)
+  const handleNumberChange = (event) => setNewNumber(event.target.value)
+  const handleFilterChange = (event) => setFilter(event.target.value)
 
+  // Lista osób do wyświetlenia
   const personsToShow = persons.filter(person =>
     person.name.toLowerCase().includes(filter.toLowerCase())
   )
@@ -45,31 +74,21 @@ const App = () => {
     <div>
       <h2>Phonebook</h2>
 
-      <div>
-        filter shown with: <input value={filter} onChange={handleFilterChange} />
-      </div>
+      <Filter filter={filter} handleFilterChange={handleFilterChange} />
 
-      <form onSubmit={addPerson}>
-        <div>
-          name: <input value={newName} onChange={(e) => setNewName(e.target.value)} />
-        </div>
-        <div>
-          number: <input value={newNumber} onChange={(e) => setNewNumber(e.target.value)} />
-        </div>
-        <div>
-          <button type="submit">add</button>
-        </div>
-      </form>
+      <h3>Add a new</h3>
 
-      <h2>Numbers</h2>
+      <PersonForm
+        addPerson={addPerson}
+        newName={newName}
+        handleNameChange={handleNameChange}
+        newNumber={newNumber}
+        handleNumberChange={handleNumberChange}
+      />
 
-      <ul>
-        {personsToShow.map(person =>
-          <li key={person.name}>
-            {person.name} {person.number}
-          </li>
-        )}
-      </ul>
+      <h3>Numbers</h3>
+
+      <Persons persons={personsToShow} />
     </div>
   )
 }
