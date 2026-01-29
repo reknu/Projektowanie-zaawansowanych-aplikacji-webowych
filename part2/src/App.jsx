@@ -9,6 +9,15 @@ const App = () => {
   const addPerson = (event) => {
     event.preventDefault()
 
+    const exists = persons.some(
+      person => person.name === newName
+    )
+
+    if (exists) {
+      alert(`${newName} is already added to phonebook`)
+      return
+    }
+
     const personObject = {
       name: newName
     }
@@ -27,7 +36,11 @@ const App = () => {
 
       <form onSubmit={addPerson}>
         <div>
-          name: <input value={newName} onChange={handleNameChange} />
+          name:{' '}
+          <input
+            value={newName}
+            onChange={handleNameChange}
+          />
         </div>
         <div>
           <button type="submit">add</button>
@@ -38,7 +51,9 @@ const App = () => {
 
       <ul>
         {persons.map(person =>
-          <li key={person.name}>{person.name}</li>
+          <li key={person.name}>
+            {person.name}
+          </li>
         )}
       </ul>
 
