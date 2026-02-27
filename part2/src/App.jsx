@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 
 // Komponent Filter
 const Filter = ({ filter, handleFilterChange }) => (
@@ -8,7 +9,13 @@ const Filter = ({ filter, handleFilterChange }) => (
 )
 
 // Komponent PersonForm
-const PersonForm = ({ addPerson, newName, handleNameChange, newNumber, handleNumberChange }) => (
+const PersonForm = ({
+  addPerson,
+  newName,
+  handleNameChange,
+  newNumber,
+  handleNumberChange
+}) => (
   <form onSubmit={addPerson}>
     <div>
       name: <input value={newName} onChange={handleNameChange} />
@@ -25,47 +32,64 @@ const PersonForm = ({ addPerson, newName, handleNameChange, newNumber, handleNum
 // Komponent Persons
 const Persons = ({ persons }) => (
   <ul>
-    {persons.map(person => 
-      <li key={person.name}>
+    {persons.map(person => (
+      <li key={person.id}>
         {person.name} {person.number}
       </li>
-    )}
+    ))}
   </ul>
 )
 
 // Główny komponent App
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456' },
-    { name: 'Ada Lovelace', number: '39-44-5323523' },
-    { name: 'Dan Abramov', number: '12-43-234345' },
-    { name: 'Mary Poppendieck', number: '39-23-6423122' }
-  ])
+  const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filter, setFilter] = useState('')
 
-  // Dodawanie osoby
+  // Pobranie danych z backendu
+  useEffect(() => {
+    axios
+      .get('http://localhost:3001/persons')
+      .then(response => {
+        setPersons(response.data)
+      })
+  }, [])
+
+  // Dodawanie osoby (na razie tylko do stanu)
   const addPerson = (event) => {
     event.preventDefault()
-    const exists = persons.some(person => person.name === newName)
+
+    const exists = persons.some(
+      person => person.name === newName
+    )
+
     if (exists) {
       alert(`${newName} is already added to phonebook`)
       return
     }
 
-    const personObject = { name: newName, number: newNumber }
+    const personObject = {
+      name: newName,
+      number: newNumber
+    }
+
     setPersons(persons.concat(personObject))
     setNewName('')
     setNewNumber('')
   }
 
-  // Event handlery
-  const handleNameChange = (event) => setNewName(event.target.value)
-  const handleNumberChange = (event) => setNewNumber(event.target.value)
-  const handleFilterChange = (event) => setFilter(event.target.value)
+  // Handlery
+  const handleNameChange = (event) =>
+    setNewName(event.target.value)
 
-  // Lista osób do wyświetlenia
+  const handleNumberChange = (event) =>
+    setNewNumber(event.target.value)
+
+  const handleFilterChange = (event) =>
+    setFilter(event.target.value)
+
+  // Filtrowanie
   const personsToShow = persons.filter(person =>
     person.name.toLowerCase().includes(filter.toLowerCase())
   )
@@ -74,7 +98,10 @@ const App = () => {
     <div>
       <h2>Phonebook</h2>
 
-      <Filter filter={filter} handleFilterChange={handleFilterChange} />
+      <Filter
+        filter={filter}
+        handleFilterChange={handleFilterChange}
+      />
 
       <h3>Add a new</h3>
 
