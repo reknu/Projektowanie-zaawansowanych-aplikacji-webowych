@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import personService from './services/persons'
 
-// Komponent Filter
+// Filter
 const Filter = ({ filter, handleFilterChange }) => (
   <div>
     filter shown with: <input value={filter} onChange={handleFilterChange} />
   </div>
 )
 
-// Komponent PersonForm
+// PersonForm
 const PersonForm = ({
   addPerson,
   newName,
@@ -23,63 +23,101 @@ const PersonForm = ({
     <div>
       number: <input value={newNumber} onChange={handleNumberChange} />
     </div>
-    <div>
-      <button type="submit">add</button>
-    </div>
+    <button type="submit">add</button>
   </form>
 )
 
-// Komponent Persons
-const Persons = ({ persons }) => (
+// Persons
+const Persons = ({ persons, deletePerson }) => (
   <ul>
     {persons.map(person => (
       <li key={person.id}>
         {person.name} {person.number}
+        <button onClick={() => deletePerson(person.id, person.name)}>
+          delete
+        </button>
       </li>
     ))}
   </ul>
 )
 
-// Główny komponent App
+// App
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filter, setFilter] = useState('')
 
-  // Pobranie danych z backendu
+  // pobranie danych
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
-      })
+    personService
+      .getAll()
+      .then(data => setPersons(data))
   }, [])
 
-  // Dodawanie osoby (na razie tylko do stanu)
+  // dodawanie osoby
   const addPerson = (event) => {
     event.preventDefault()
 
-    const exists = persons.some(
+    const existingPerson = persons.find(
       person => person.name === newName
     )
 
-    if (exists) {
-      alert(`${newName} is already added to phonebook`)
+    // jeśli osoba istnieje -> update
+    if (existingPerson) {
+      const confirmUpdate = window.confirm(
+        `${newName} is already added to phonebook, replace the old number with a new one?`
+      )
+
+      if (confirmUpdate) {
+        const updatedPerson = {
+          ...existingPerson,
+          number: newNumber
+        }
+
+        personService
+          .update(existingPerson.id, updatedPerson)
+          .then(returnedPerson => {
+            setPersons(
+              persons.map(p =>
+                p.id !== existingPerson.id ? p : returnedPerson
+              )
+            )
+          })
+      }
+
       return
     }
 
+    // nowa osoba
     const personObject = {
       name: newName,
       number: newNumber
     }
 
-    setPersons(persons.concat(personObject))
-    setNewName('')
-    setNewNumber('')
+    personService
+      .create(personObject)
+      .then(returnedPerson => {
+        setPersons(persons.concat(returnedPerson))
+        setNewName('')
+        setNewNumber('')
+      })
   }
 
-  // Handlery
+  // usuwanie osoby
+  const deletePerson = (id, name) => {
+    const confirmDelete = window.confirm(`Delete ${name}?`)
+
+    if (confirmDelete) {
+      personService
+        .remove(id)
+        .then(() => {
+          setPersons(persons.filter(p => p.id !== id))
+        })
+    }
+  }
+
+  // handlery
   const handleNameChange = (event) =>
     setNewName(event.target.value)
 
@@ -89,7 +127,6 @@ const App = () => {
   const handleFilterChange = (event) =>
     setFilter(event.target.value)
 
-  // Filtrowanie
   const personsToShow = persons.filter(person =>
     person.name.toLowerCase().includes(filter.toLowerCase())
   )
@@ -115,7 +152,10 @@ const App = () => {
 
       <h3>Numbers</h3>
 
-      <Persons persons={personsToShow} />
+      <Persons
+        persons={personsToShow}
+        deletePerson={deletePerson}
+      />
     </div>
   )
 }
