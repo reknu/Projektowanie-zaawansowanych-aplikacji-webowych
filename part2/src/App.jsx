@@ -1,5 +1,19 @@
 import { useState, useEffect } from 'react'
 import personService from './services/persons'
+import './index.css'
+
+// Notification
+const Notification = ({ message, type }) => {
+  if (message === null) {
+    return null
+  }
+
+  return (
+    <div className={type}>
+      {message}
+    </div>
+  )
+}
 
 // Filter
 const Filter = ({ filter, handleFilterChange }) => (
@@ -48,14 +62,26 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   const [filter, setFilter] = useState('')
 
-  // pobranie danych
+  // NEW
+  const [notificationMessage, setNotificationMessage] = useState(null)
+  const [notificationType, setNotificationType] = useState('success')
+
   useEffect(() => {
     personService
       .getAll()
       .then(data => setPersons(data))
   }, [])
 
-  // dodawanie osoby
+  const showNotification = (message, type = 'success') => {
+    setNotificationMessage(message)
+    setNotificationType(type)
+
+    setTimeout(() => {
+      setNotificationMessage(null)
+    }, 5000)
+  }
+
+  // add person
   const addPerson = (event) => {
     event.preventDefault()
 
@@ -63,7 +89,7 @@ const App = () => {
       person => person.name === newName
     )
 
-    // jeśli osoba istnieje -> update
+    // update existing person
     if (existingPerson) {
       const confirmUpdate = window.confirm(
         `${newName} is already added to phonebook, replace the old number with a new one?`
@@ -83,13 +109,30 @@ const App = () => {
                 p.id !== existingPerson.id ? p : returnedPerson
               )
             )
+
+            showNotification(
+              `Updated ${returnedPerson.name}`
+            )
+
+            setNewName('')
+            setNewNumber('')
+          })
+          .catch(error => {
+            showNotification(
+              `Information of ${existingPerson.name} has already been removed from server`,
+              'error'
+            )
+
+            setPersons(
+              persons.filter(p => p.id !== existingPerson.id)
+            )
           })
       }
 
       return
     }
 
-    // nowa osoba
+    // create new person
     const personObject = {
       name: newName,
       number: newNumber
@@ -99,12 +142,17 @@ const App = () => {
       .create(personObject)
       .then(returnedPerson => {
         setPersons(persons.concat(returnedPerson))
+
+        showNotification(
+          `Added ${returnedPerson.name}`
+        )
+
         setNewName('')
         setNewNumber('')
       })
   }
 
-  // usuwanie osoby
+  // delete person
   const deletePerson = (id, name) => {
     const confirmDelete = window.confirm(`Delete ${name}?`)
 
@@ -113,11 +161,15 @@ const App = () => {
         .remove(id)
         .then(() => {
           setPersons(persons.filter(p => p.id !== id))
+
+          showNotification(
+            `Deleted ${name}`
+          )
         })
     }
   }
 
-  // handlery
+  // handlers
   const handleNameChange = (event) =>
     setNewName(event.target.value)
 
@@ -134,6 +186,11 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+
+      <Notification
+        message={notificationMessage}
+        type={notificationType}
+      />
 
       <Filter
         filter={filter}
